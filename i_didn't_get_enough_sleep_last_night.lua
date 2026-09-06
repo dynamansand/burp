@@ -20,7 +20,8 @@ screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui", 10) or CoreGui
 
 local textLabel = Instance.new("TextLabel")
 textLabel.Size = UDim2.new(0.8, 0, 0.047, 0)
-textLabel.Position = UDim2.new(0.1, 0, 0.85, 0) 
+-- Shifted 3x label height (0.047 * 3 = 0.141) upwards: 0.85 - 0.141 = 0.709
+textLabel.Position = UDim2.new(0.1, 0, 0.709, 0) 
 textLabel.BackgroundTransparency = 1
 textLabel.TextScaled = true
 textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
@@ -44,7 +45,7 @@ local themeConfigs = {
             {time = 79.9, text = "1"},
             {time = 80.2, text = "sonic dead he watching me"},
             {time = 81.7, text = "every day he clockin' me"},
-            {time = 82.7, text = "red alert, armed and dangerous,"},
+            {time = 82.1, text = "red alert, armed and dangerous,"},
             {time = 84.7, text = "i keep that blast on me"},
             {time = 85.8, text = "and i ain't lookin for no trouble"},
             {time = 87.4, text = "i'm just lookin out for me"},
@@ -86,7 +87,7 @@ local themeConfigs = {
             {time = 67.8, text = "Yeah baby, faker than fake"},
             {time = 69.3, text = "You're for the background"},
             {time = 70.5, text = "So keep it rollin'!"},
-            {time = 71.9, text = "You'll never slow me down"},
+            {time = 71.1, text = "You'll never slow me down"},
             {time = 73.3, text = "I am what's real!"},
             {time = 75.3, text = ""},
             {time = 76.5, text = "Hills of fading green..."},
@@ -174,13 +175,13 @@ local themeConfigs = {
             {time = 230.7, text = "TO THE HOME THAT YOU TOOK FROM ME"},
             {time = 232.5, text = "I'M EVERYTHING YOU WANT"},
             {time = 234.2, text = "ALL YOU WANT TO BE"},
-            {time = 235.2, text = "I WON'T EVER"},
-            {time = 236.9, text = "FALL DOWN"},
-            {time = 238.3, text = "GIVE ME STRENGTH"},
-            {time = 239.2, text = "SO I CAN"},
-            {time = 239.7, text = "BREAK"},
-            {time = 241.1, text = "FREE!"},
-            {time = 243.1, text = ""},
+            {time = 106.4, text = "I WON'T EVER"},
+            {time = 108.0, text = "FALL DOWN"},
+            {time = 109.5, text = "GIVE ME STRENGTH"},
+            {time = 110.4, text = "SO I CAN"},
+            {time = 110.9, text = "BREAK"},
+            {time = 112.3, text = "FREE!"},
+            {time = 114.3, text = ""},
         }
     },
     ["AmySolo"] = {
@@ -203,7 +204,7 @@ local themeConfigs = {
             {time = 127.1, text = "is gettin' BIGGER"},
             {time = 128.2, text = "BANG,"},
             {time = 128.8, text = "BANG, BANG,"},
-            {time = 129.3, text = "BANG, BANG, BANG"},
+            {time = 128.3, text = "BANG, BANG, BANG"},
             {time = 130.0, text = "Pull"},
             {time = 130.2, text = "Pull my"},
             {time = 130.4, text = "Pull my Devil"},
@@ -264,7 +265,6 @@ local function updateLyrics(soundTrack, config)
     local targetText = ""
     local targetIndex = 0
     
-    -- Dynamically update text color and its darker outline color
     textLabel.TextColor3 = config.color
     textLabel.TextStrokeColor3 = darkenColor(config.color, 0.35)
     
@@ -318,5 +318,3 @@ _G.LyricsConnection = RunService.Heartbeat:Connect(function()
         fadeOutLyrics()
     end
 end)
-
-print("no i don't even wanna format this bruh")
