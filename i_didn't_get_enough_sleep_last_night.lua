@@ -5,45 +5,142 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 
--- Helper function to darken Color3 values for text outlines
+-- Helper function to darken Color3 values for text outlines[cite: 2]
 local function darkenColor(color, factor)
-    factor = factor or 0.35 -- Lower values make it darker (0.35 = 35% original brightness)
+    factor = factor or 0.35
     return Color3.new(color.R * factor, color.G * factor, color.B * factor)
 end
 
--- Shared Color Constants
+-- Shared Color Constants[cite: 2]
 local COLOR_SONIC_BLUE = Color3.fromRGB(0, 70, 200)
 local COLOR_KNUCKLES_RED = Color3.fromRGB(220, 20, 20)
+local COLOR_TAILS_YELLOW = Color3.fromRGB(255, 255, 0) -- Added Tails color
 
--- Single Shared Overlay UI
+-- Single Shared Overlay UI[cite: 2]
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "MasterLMSLyricsOverlay"
 screenGui.ResetOnSpawn = false
 screenGui.DisplayOrder = 100000 
 screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui", 10) or CoreGui
 
-local textLabel = Instance.new("TextLabel")
-textLabel.Size = UDim2.new(0.8, 0, 0.047, 0)
--- Positioned 3x height upwards (0.85 - 0.141 = 0.709)
-textLabel.Position = UDim2.new(0.1, 0, 0.709, 0) 
-textLabel.BackgroundTransparency = 1
-textLabel.TextScaled = true
-textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-textLabel.Font = Enum.Font.Highway 
-textLabel.Text = ""
+-- Main Active Lyric Label[cite: 2]
+local currentLabel = Instance.new("TextLabel")
+currentLabel.Name = "CurrentLyric"
+currentLabel.Size = UDim2.new(0.8, 0, 0.047, 0)
+currentLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+currentLabel.Position = UDim2.new(0.5, 0, 0.732, 0) 
+currentLabel.BackgroundTransparency = 1
+currentLabel.TextScaled = true
+currentLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+currentLabel.Font = Enum.Font.Highway 
+currentLabel.Text = ""
+currentLabel.TextStrokeTransparency = 0
+currentLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+currentLabel.Parent = screenGui
 
--- Text Outline Configuration
-textLabel.TextStrokeTransparency = 0
-textLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+-- UIScale for BPM pulsation on the main lyric[cite: 2]
+local lyricScale = Instance.new("UIScale")
+lyricScale.Parent = currentLabel
 
-textLabel.Parent = screenGui
+-- Secondary Shadow/Previous Lyric Label[cite: 2]
+local previousLabel = Instance.new("TextLabel")
+previousLabel.Name = "PreviousLyric"
+previousLabel.Size = UDim2.new(0.8, 0, 0.038, 0)
+previousLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+previousLabel.Position = UDim2.new(0.5, 0, 0.777, 0) 
+previousLabel.BackgroundTransparency = 1
+previousLabel.TextScaled = true
+previousLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+previousLabel.Font = Enum.Font.Highway 
+previousLabel.Text = ""
+previousLabel.TextTransparency = 0.55
+previousLabel.TextStrokeTransparency = 0.75
+previousLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+previousLabel.Parent = screenGui
 
--- Configurations for each theme track
+-- Transparent Audio Visualizer Setup[cite: 2]
+local visualizerFrame = Instance.new("Frame")
+visualizerFrame.Name = "AudioVisualizer"
+visualizerFrame.Size = UDim2.new(0.5, 0, 0.06, 0)
+visualizerFrame.Position = UDim2.new(0.25, 0, 0.805, 0)
+visualizerFrame.BackgroundTransparency = 1
+visualizerFrame.Parent = screenGui
+
+local NUM_BARS = 20
+local visualizerBars = {}
+
+for i = 1, NUM_BARS do
+    local bar = Instance.new("Frame")
+    bar.Name = "Bar_" .. i
+    bar.AnchorPoint = Vector2.new(0.5, 1) 
+    bar.Position = UDim2.new((i - 0.5) / NUM_BARS, 0, 1, 0)
+    bar.Size = UDim2.new((1 / NUM_BARS) - 0.01, 0, 0, 0)
+    bar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    bar.BackgroundTransparency = 0.8
+    bar.BorderSizePixel = 0
+    bar.Parent = visualizerFrame
+    visualizerBars[i] = bar
+end
+
+-- Configurations for each theme track (including BPM)[cite: 2]
 local themeConfigs = {
-    ["MetalSonicSolo"] = {
-        color = Color3.fromRGB(0, 35, 130),
+    ["TailsSolo"] = {
+        bpm = 95,
+        color = COLOR_TAILS_YELLOW,
         timeline = {
             {time = 0.0, text = ""},
+            {time = 32.1, text = "The heavy silence buried all the voices that I knew"},
+            {time = 37.1, text = "I'm standing in the burning hell, but I still remember you."},
+            {time = 42.1, text = "My hands are steady now, but I can't face this on my own"},
+            {time = 47.2, text = "I am the only one left standing in the cold unknown..."},
+			{time = 50.8, text = "THEY TOOK THE REST OF THEM"},
+    		{time = 53.4, text = "BUT THEY CAN'T TAKE MY MIND"},
+    		{time = 55.9, text = "AND EVERY PIECE WAS BUILT"},
+    		{time = 58.4, text = "TO LEAVE THE FEAR BEHIND"},
+    		{time = 61.3, text = "I"},
+    		{time = 61.6, text = "I WAS"},
+    		{time = 61.9, text = "I WAS MADE"},
+    		{time = 62.35, text = "I WAS MADE TO"},
+    		{time = 62.9, text = "I WAS MADE TO FALL"},
+    		{time = 63.5, text = "BUT"},
+    		{time = 63.8, text = "BUT TAUGHT"},
+    		{time = 64.2, text = "BUT TAUGHT MY"},
+    		{time = 64.4, text = "BUT TAUGHT MYSELF"},
+    		{time = 64.9, text = "BUT TAUGHT MYSELF TO"},
+    		{time = 65.3, text = "BUT TAUGHT MYSELF TO FLY"},
+    		{time = 66.25, text = "AND I WON'T STOP NOW,"},
+    		{time = 69.15, text = "I'LL MAKE IT RIGHT!"},
+    		{time = 72.15, text = ""},
+    		{time = 138.2, text = "The darkness doesn't scare me, and I don't need the light to see"},
+    		{time = 143.25, text = "I'm moving through the shadows, and I know you're counting on me"},
+    		{time = 148.25, text = "My legs are burning now, but I refuse to slow my pace"},
+    		{time = 153.35, text = "I am the only spark still shining in this empty place!"},
+    		{time = 156.95, text = "THEY TOOK THE REST OF THEM"},
+    		{time = 159.55, text = "BUT THEY CAN'T TAKE MY MIND"},
+    		{time = 162.05, text = "AND EVERY PIECE WAS BUILT"},
+    		{time = 164.55, text = "TO LEAVE THE FEAR BEHIND"},
+    		{time = 167.45, text = "I"},
+    		{time = 167.75, text = "I WAS"},
+    		{time = 168.05, text = "I WAS MADE"},
+    		{time = 168.5, text = "I WAS MADE TO"},
+    		{time = 169.05, text = "I WAS MADE TO FALL"},
+    		{time = 169.65, text = "BUT"},
+    		{time = 169.95, text = "BUT TAUGHT"},
+    		{time = 170.35, text = "BUT TAUGHT MY"},
+    		{time = 170.55, text = "BUT TAUGHT MYSELF"},
+    		{time = 171.05, text = "BUT TAUGHT MYSELF TO"},
+    		{time = 171.45, text = "BUT TAUGHT MYSELF TO FLY"},
+    		{time = 172.4, text = "AND I WON'T STOP NOW,"},
+    		{time = 175.3, text = "I'LL MAKE IT RIGHT!"},
+    		{time = 178.3, text = ""}
+			
+        }
+    },
+    ["MetalSonicSolo"] = {
+        bpm = 84,
+        color = Color3.fromRGB(0, 35, 130),
+        timeline = {
+			{time = 0.0, text = ""},
             {time = 78.7, text = "3"},
             {time = 79.3, text = "2"},
             {time = 79.9, text = "1"},
@@ -66,9 +163,10 @@ local themeConfigs = {
         }
     },
     ["SonicSolo"] = {
+        bpm = 87,
         color = COLOR_SONIC_BLUE,
         timeline = {
-            {time = 0.0, text = ""},
+			{time = 0.0, text = ""},
             {time = 1.8, text = "Standing alone..."},
             {time = 4.8, text = "Standing just out of reach!"},
             {time = 7.1, text = "Foot on the brakes..."},
@@ -189,9 +287,10 @@ local themeConfigs = {
         }
     },
     ["AmySolo"] = {
+        bpm = 86,
         color = Color3.fromRGB(255, 105, 180),
         timeline = {
-            {time = 0.0, text = ""},
+        	{time = 0.0, text = ""},
             {time = 5.6, text = "I"},
             {time = 6.8, text = "HEAR"},
             {time = 7.6, text = "YOUR"},
@@ -230,9 +329,10 @@ local themeConfigs = {
         }
     },
     ["KnucklesSolo"] = {
+        bpm = 155,
         color = COLOR_KNUCKLES_RED,
         timeline = {
-            {time = 0.0, text = ""},
+        	{time = 0.0, text = ""},
             {time = 10.8, text = "COME ON,", color = COLOR_KNUCKLES_RED},
             {time = 11.6, text = "BRING IT!", color = COLOR_KNUCKLES_RED},
             {time = 13.6, text = ""},
@@ -363,19 +463,31 @@ local themeConfigs = {
 local SoloThemes = ReplicatedStorage:WaitForChild("ClientAssets"):WaitForChild("Sounds"):WaitForChild("mus"):WaitForChild("Game"):WaitForChild("Round"):WaitForChild("SoloTheme")
 local currentLine = 0
 local isFadingOut = false
-local fadeTween = nil
+local currentFadeTween = nil
+local previousFadeTween = nil
+
+local function cancelActiveTweens()
+    if currentFadeTween then currentFadeTween:Cancel() currentFadeTween = nil end
+    if previousFadeTween then previousFadeTween:Cancel() previousFadeTween = nil end
+end
 
 local function fadeOutLyrics()
-    if isFadingOut or textLabel.Text == "" then return end
+    if isFadingOut or (currentLabel.Text == "" and previousLabel.Text == "") then return end
     isFadingOut = true
+    cancelActiveTweens()
     
-    local tweenInfo = TweenInfo.new(2.0, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
-    fadeTween = TweenService:Create(textLabel, tweenInfo, {TextTransparency = 1, TextStrokeTransparency = 1})
-    fadeTween:Play()
+    local tweenInfo = TweenInfo.new(1.5, Enum.EasingStyle.Linear, Enum.EasingDirection.Out)
     
-    fadeTween.Completed:Connect(function()
-        if isFadingOut then
-            textLabel.Text = ""
+    currentFadeTween = TweenService:Create(currentLabel, tweenInfo, {TextTransparency = 1, TextStrokeTransparency = 1})
+    previousFadeTween = TweenService:Create(previousLabel, tweenInfo, {TextTransparency = 1, TextStrokeTransparency = 1})
+    
+    currentFadeTween:Play()
+    previousFadeTween:Play()
+    
+    currentFadeTween.Completed:Connect(function(playbackState)
+        if playbackState == Enum.PlaybackState.Completed and isFadingOut then
+            currentLabel.Text = ""
+            previousLabel.Text = ""
             currentLine = 0
         end
     end)
@@ -403,7 +515,6 @@ local function updateLyrics(soundTrack, config)
         if currentTime >= lyricData.time then
             targetText = lyricData.text
             targetIndex = i
-            -- Uses the specific color assigned to this lyric line, or falls back to the default config color
             if lyricData.color then
                 targetColor = lyricData.color
             end
@@ -412,35 +523,69 @@ local function updateLyrics(soundTrack, config)
         end
     end
     
-    -- Dynamically update text and outline color to match active line
-    textLabel.TextColor3 = targetColor
-    textLabel.TextStrokeColor3 = darkenColor(targetColor, 0.35)
+    -- 1. BPM Pulse calculation using exponential beat decay[cite: 2]
+    local bpm = config.bpm or 100
+    local beatInterval = 60 / bpm
+    local beatProgress = (currentTime % beatInterval) / beatInterval
+    local beatPulse = math.exp(-beatProgress * 7) * 0.15 
+    lyricScale.Scale = 1 + beatPulse
+
+    -- 2. Audio Visualizer update with frequency simulation and higher sensitivity[cite: 2]
+    local loudness = soundTrack.PlaybackLoudness or 0
+    local normalizedLoudness = math.clamp((loudness ^ 1.1) / 250, 0, 1.2)
     
-    if isFadingOut and targetText ~= "" then
-        if fadeTween then fadeTween:Cancel() end
-        isFadingOut = false
-        textLabel.TextTransparency = 0
-        textLabel.TextStrokeTransparency = 0
+    for i, bar in ipairs(visualizerBars) do
+        local barNoise = math.noise(currentTime * 4, i * 0.25) + 0.5 
+        local waveFactor = (math.sin(currentTime * 8 + i * 0.5) + 1) * 0.15
+        
+        local heightMultiplier = (barNoise * 0.85) + waveFactor
+        local barHeight = math.clamp(normalizedLoudness * heightMultiplier, 0.02, 1)
+        
+        bar.Size = UDim2.new((1 / NUM_BARS) - 0.01, 0, barHeight, 0)
+        bar.BackgroundColor3 = targetColor
+        bar.BackgroundTransparency = math.clamp(0.85 - (barHeight * 0.4), 0.45, 0.85)
     end
     
-    if isFadingOut then return end
-    
+    -- 3. Line transitions and fading[cite: 2]
     if targetIndex ~= currentLine then
         currentLine = targetIndex
-        
-        if fadeTween then fadeTween:Cancel() end
-        textLabel.TextTransparency = 0
-        textLabel.TextStrokeTransparency = 0
+        cancelActiveTweens()
+        isFadingOut = false
         
         if targetText == "" then
             fadeOutLyrics()
         else
-            textLabel.Text = targetText
+            -- Shuffle old text up
+            if currentLabel.Text ~= "" then
+                previousLabel.Text = currentLabel.Text
+                previousLabel.TextColor3 = currentLabel.TextColor3
+                previousLabel.TextStrokeColor3 = currentLabel.TextStrokeColor3
+                previousLabel.TextTransparency = 0.55
+                previousLabel.TextStrokeTransparency = 0.75
+            else
+                previousLabel.Text = ""
+            end
+            
+            -- Set new text
+            currentLabel.Text = targetText
+            currentLabel.TextColor3 = targetColor
+            currentLabel.TextStrokeColor3 = darkenColor(targetColor, 0.35)
+            
+            -- Prepare for fade in
+            currentLabel.TextTransparency = 1
+            currentLabel.TextStrokeTransparency = 1
+            
+            local fadeInInfo = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+            currentFadeTween = TweenService:Create(currentLabel, fadeInInfo, {
+                TextTransparency = 0,
+                TextStrokeTransparency = 0
+            })
+            currentFadeTween:Play()
         end
     end
 end
 
--- Cleanup prior active connections
+-- Cleanup prior active connections[cite: 2]
 _G.LyricsConnection = _G.LyricsConnection or nil
 if _G.LyricsConnection then _G.LyricsConnection:Disconnect() end
 
@@ -449,13 +594,18 @@ _G.LyricsConnection = RunService.Heartbeat:Connect(function()
     if playingTheme and playingTheme.IsPlaying then
         if playingTheme.TimePosition < 0.5 then
             isFadingOut = false
-            textLabel.TextTransparency = 0
-            textLabel.TextStrokeTransparency = 0
+            currentLabel.Text = ""
+            previousLabel.Text = ""
+            currentLine = 0
         end
         updateLyrics(playingTheme, config)
     else
         fadeOutLyrics()
+        lyricScale.Scale = 1
+        for _, bar in ipairs(visualizerBars) do
+            bar.Size = UDim2.new(bar.Size.X.Scale, 0, 0, 0)
+        end
     end
 end)
 
-print("if you are reading this message my mental stability is probably intact")
+print("dude")
