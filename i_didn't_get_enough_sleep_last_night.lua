@@ -5,25 +5,21 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 
--- Helper function to darken Color3 values for text outlines[cite: 2]
 local function darkenColor(color, factor)
     factor = factor or 0.35
     return Color3.new(color.R * factor, color.G * factor, color.B * factor)
 end
 
--- Shared Color Constants[cite: 2]
 local COLOR_SONIC_BLUE = Color3.fromRGB(0, 70, 200)
 local COLOR_KNUCKLES_RED = Color3.fromRGB(220, 20, 20)
 local COLOR_TAILS_YELLOW = Color3.fromRGB(255, 255, 0) -- Added Tails color
 
--- Single Shared Overlay UI[cite: 2]
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "MasterLMSLyricsOverlay"
 screenGui.ResetOnSpawn = false
 screenGui.DisplayOrder = 100000 
 screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui", 10) or CoreGui
 
--- Main Active Lyric Label[cite: 2]
 local currentLabel = Instance.new("TextLabel")
 currentLabel.Name = "CurrentLyric"
 currentLabel.Size = UDim2.new(0.8, 0, 0.047, 0)
@@ -38,11 +34,9 @@ currentLabel.TextStrokeTransparency = 0
 currentLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 currentLabel.Parent = screenGui
 
--- UIScale for BPM pulsation on the main lyric[cite: 2]
 local lyricScale = Instance.new("UIScale")
 lyricScale.Parent = currentLabel
 
--- Secondary Shadow/Previous Lyric Label[cite: 2]
 local previousLabel = Instance.new("TextLabel")
 previousLabel.Name = "PreviousLyric"
 previousLabel.Size = UDim2.new(0.8, 0, 0.038, 0)
@@ -58,7 +52,6 @@ previousLabel.TextStrokeTransparency = 0.75
 previousLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
 previousLabel.Parent = screenGui
 
--- Transparent Audio Visualizer Setup[cite: 2]
 local visualizerFrame = Instance.new("Frame")
 visualizerFrame.Name = "AudioVisualizer"
 visualizerFrame.Size = UDim2.new(0.5, 0, 0.06, 0)
@@ -82,7 +75,6 @@ for i = 1, NUM_BARS do
     visualizerBars[i] = bar
 end
 
--- Configurations for each theme track (including BPM)[cite: 2]
 local themeConfigs = {
     ["TailsSolo"] = {
         bpm = 95,
@@ -522,15 +514,13 @@ local function updateLyrics(soundTrack, config)
             break
         end
     end
-    
-    -- 1. BPM Pulse calculation using exponential beat decay[cite: 2]
+
     local bpm = config.bpm or 100
     local beatInterval = 60 / bpm
     local beatProgress = (currentTime % beatInterval) / beatInterval
     local beatPulse = math.exp(-beatProgress * 7) * 0.15 
     lyricScale.Scale = 1 + beatPulse
 
-    -- 2. Audio Visualizer update with frequency simulation and higher sensitivity[cite: 2]
     local loudness = soundTrack.PlaybackLoudness or 0
     local normalizedLoudness = math.clamp((loudness ^ 1.1) / 250, 0, 1.2)
     
@@ -545,8 +535,7 @@ local function updateLyrics(soundTrack, config)
         bar.BackgroundColor3 = targetColor
         bar.BackgroundTransparency = math.clamp(0.85 - (barHeight * 0.4), 0.45, 0.85)
     end
-    
-    -- 3. Line transitions and fading[cite: 2]
+
     if targetIndex ~= currentLine then
         currentLine = targetIndex
         cancelActiveTweens()
@@ -555,7 +544,6 @@ local function updateLyrics(soundTrack, config)
         if targetText == "" then
             fadeOutLyrics()
         else
-            -- Shuffle old text up
             if currentLabel.Text ~= "" then
                 previousLabel.Text = currentLabel.Text
                 previousLabel.TextColor3 = currentLabel.TextColor3
@@ -565,13 +553,11 @@ local function updateLyrics(soundTrack, config)
             else
                 previousLabel.Text = ""
             end
-            
-            -- Set new text
+			
             currentLabel.Text = targetText
             currentLabel.TextColor3 = targetColor
             currentLabel.TextStrokeColor3 = darkenColor(targetColor, 0.35)
             
-            -- Prepare for fade in
             currentLabel.TextTransparency = 1
             currentLabel.TextStrokeTransparency = 1
             
@@ -585,7 +571,6 @@ local function updateLyrics(soundTrack, config)
     end
 end
 
--- Cleanup prior active connections[cite: 2]
 _G.LyricsConnection = _G.LyricsConnection or nil
 if _G.LyricsConnection then _G.LyricsConnection:Disconnect() end
 
