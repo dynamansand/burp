@@ -12,13 +12,26 @@ end
 
 local COLOR_SONIC_BLUE = Color3.fromRGB(0, 70, 200)
 local COLOR_KNUCKLES_RED = Color3.fromRGB(220, 20, 20)
-local COLOR_TAILS_YELLOW = Color3.fromRGB(255, 255, 0) -- Added Tails color
+local COLOR_TAILS_YELLOW = Color3.fromRGB(255, 255, 0)
 
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "MasterLMSLyricsOverlay"
 screenGui.ResetOnSpawn = false
-screenGui.DisplayOrder = 100000 
+screenGui.DisplayOrder = -100
+screenGui.IgnoreGuiInset = true 
 screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui", 10) or CoreGui
+
+local bgImage = Instance.new("ImageLabel")
+bgImage.Name = "LMSBackgroundImage"
+bgImage.Size = UDim2.new(1.3, 0, 1.3, 0) 
+bgImage.Position = UDim2.new(0, 0, -0.15, 0)
+bgImage.BackgroundTransparency = 1
+bgImage.Image = "rbxassetid://96646973092066"
+bgImage.ScaleType = Enum.ScaleType.Crop 
+bgImage.ImageTransparency = 1
+bgImage.ZIndex = 1
+bgImage.Visible = false
+bgImage.Parent = screenGui
 
 local currentLabel = Instance.new("TextLabel")
 currentLabel.Name = "CurrentLyric"
@@ -32,6 +45,7 @@ currentLabel.Font = Enum.Font.Highway
 currentLabel.Text = ""
 currentLabel.TextStrokeTransparency = 0
 currentLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+currentLabel.ZIndex = 10
 currentLabel.Parent = screenGui
 
 local lyricScale = Instance.new("UIScale")
@@ -50,16 +64,19 @@ previousLabel.Text = ""
 previousLabel.TextTransparency = 0.55
 previousLabel.TextStrokeTransparency = 0.75
 previousLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+previousLabel.ZIndex = 10
 previousLabel.Parent = screenGui
 
 local visualizerFrame = Instance.new("Frame")
 visualizerFrame.Name = "AudioVisualizer"
-visualizerFrame.Size = UDim2.new(0.5, 0, 0.06, 0)
-visualizerFrame.Position = UDim2.new(0.25, 0, 0.805, 0)
+visualizerFrame.Size = UDim2.new(1, 0, 0.1, 0)
+visualizerFrame.AnchorPoint = Vector2.new(0.5, 1)
+visualizerFrame.Position = UDim2.new(0.5, 0, 1, 0)
 visualizerFrame.BackgroundTransparency = 1
+visualizerFrame.ZIndex = 10
 visualizerFrame.Parent = screenGui
 
-local NUM_BARS = 20
+local NUM_BARS = 30
 local visualizerBars = {}
 
 for i = 1, NUM_BARS do
@@ -67,10 +84,11 @@ for i = 1, NUM_BARS do
     bar.Name = "Bar_" .. i
     bar.AnchorPoint = Vector2.new(0.5, 1) 
     bar.Position = UDim2.new((i - 0.5) / NUM_BARS, 0, 1, 0)
-    bar.Size = UDim2.new((1 / NUM_BARS) - 0.01, 0, 0, 0)
+    bar.Size = UDim2.new((1 / NUM_BARS), -2, 0, 0)
     bar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     bar.BackgroundTransparency = 0.8
     bar.BorderSizePixel = 0
+    bar.ZIndex = 10
     bar.Parent = visualizerFrame
     visualizerBars[i] = bar
 end
@@ -455,6 +473,8 @@ local themeConfigs = {
 local SoloThemes = ReplicatedStorage:WaitForChild("ClientAssets"):WaitForChild("Sounds"):WaitForChild("mus"):WaitForChild("Game"):WaitForChild("Round"):WaitForChild("SoloTheme")
 local currentLine = 0
 local isFadingOut = false
+local isBgActive = false
+local bgFadeTween = nil
 local currentFadeTween = nil
 local previousFadeTween = nil
 
@@ -514,12 +534,20 @@ local function updateLyrics(soundTrack, config)
             break
         end
     end
+    
+    bgImage.ImageColor3 = targetColor
+
+    local scrollSpeed = 0.025
+    local scrollRange = 0.15
+    local offset = (tick() * scrollSpeed) % scrollRange
+    bgImage.Position = UDim2.new(-offset, 0, offset - scrollRange, 0)
 
     local bpm = config.bpm or 100
     local beatInterval = 60 / bpm
     local beatProgress = (currentTime % beatInterval) / beatInterval
-    local beatPulse = math.exp(-beatProgress * 7) * 0.15 
-    lyricScale.Scale = 1 + beatPulse
+    
+    local targetPulse = math.exp(-beatProgress * 7) * 0.15 
+    lyricScale.Scale = lyricScale.Scale + ((1 + targetPulse) - lyricScale.Scale) * 0.25
 
     local loudness = soundTrack.PlaybackLoudness or 0
     local normalizedLoudness = math.clamp((loudness ^ 1.1) / 250, 0, 1.2)
@@ -531,7 +559,7 @@ local function updateLyrics(soundTrack, config)
         local heightMultiplier = (barNoise * 0.85) + waveFactor
         local barHeight = math.clamp(normalizedLoudness * heightMultiplier, 0.02, 1)
         
-        bar.Size = UDim2.new((1 / NUM_BARS) - 0.01, 0, barHeight, 0)
+        bar.Size = UDim2.new((1 / NUM_BARS), -2, barHeight, 0)
         bar.BackgroundColor3 = targetColor
         bar.BackgroundTransparency = math.clamp(0.85 - (barHeight * 0.4), 0.45, 0.85)
     end
@@ -553,7 +581,7 @@ local function updateLyrics(soundTrack, config)
             else
                 previousLabel.Text = ""
             end
-			
+            
             currentLabel.Text = targetText
             currentLabel.TextColor3 = targetColor
             currentLabel.TextStrokeColor3 = darkenColor(targetColor, 0.35)
@@ -577,6 +605,18 @@ if _G.LyricsConnection then _G.LyricsConnection:Disconnect() end
 _G.LyricsConnection = RunService.Heartbeat:Connect(function()
     local playingTheme, config = getActiveTheme()
     if playingTheme and playingTheme.IsPlaying then
+        if not isBgActive then
+            isBgActive = true
+            bgImage.Visible = true
+            bgImage.ImageTransparency = 1
+            
+            if bgFadeTween then bgFadeTween:Cancel() end
+            bgFadeTween = TweenService:Create(bgImage, TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                ImageTransparency = 0.9
+            })
+            bgFadeTween:Play()
+        end
+
         if playingTheme.TimePosition < 0.5 then
             isFadingOut = false
             currentLabel.Text = ""
@@ -585,10 +625,17 @@ _G.LyricsConnection = RunService.Heartbeat:Connect(function()
         end
         updateLyrics(playingTheme, config)
     else
+        if isBgActive then
+            isBgActive = false
+            if bgFadeTween then bgFadeTween:Cancel() end
+            bgImage.Visible = false
+            bgImage.ImageTransparency = 1
+        end
+
         fadeOutLyrics()
-        lyricScale.Scale = 1
+        lyricScale.Scale = lyricScale.Scale + (1 - lyricScale.Scale) * 0.2
         for _, bar in ipairs(visualizerBars) do
-            bar.Size = UDim2.new(bar.Size.X.Scale, 0, 0, 0)
+            bar.Size = UDim2.new(bar.Size.X.Scale, -2, 0, 0)
         end
     end
 end)
