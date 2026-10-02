@@ -1,7 +1,5 @@
 print("[FileBasedSoloThemes] don't worry he's always making a comeback!")
 
-loadstring(game:HttpGet("https://raw.githubusercontent.com/dynamansand/burp/refs/heads/main/i_didn't_get_enough_sleep_last_night.lua"))()
-
 if not game:IsLoaded() then game.Loaded:Wait() end
 
 -- Swaps default solo round music with your local .mp3 files from executor workspace. 
